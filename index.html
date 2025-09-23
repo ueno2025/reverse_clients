@@ -70,15 +70,22 @@
     <script>
         let companyData = [];
 
-        // JSONデータを読み込み
-        fetch("data.json")
-            .then(response => response.json())
-            .then(data => {
-                companyData = data;
-            })
-            .catch(error => {
-                console.error("データ読み込みエラー:", error);
-            });
+fetch("data.json")
+    .then(response => response.json())
+    .then(data => {
+        companyData = data;
+
+        // JSONが読み込まれた後にURLパラメータをチェック
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get("code");
+        if (code) {
+            document.getElementById("codeInput").value = code;
+            searchCompany();
+        }
+    })
+    .catch(error => {
+        console.error("データ読み込みエラー:", error);
+    });
 
         // 部分一致検索
         function searchCompany() {
@@ -184,20 +191,13 @@
             }
         });
 
-// ページ読み込み時にURLパラメータをチェックして自動検索
-window.addEventListener("DOMContentLoaded", () => {
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get("code");
-    if (code) {
-        document.getElementById("codeInput").value = code;
-        searchCompany();
-    }
-});
+
 
     </script>
 </body>
 
 </html>
+
 
 
 
