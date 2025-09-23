@@ -184,20 +184,13 @@
             }
         });
 
-        // ページ読み込み時にURLパラメータをチェックして自動検索
-        window.addEventListener("DOMContentLoaded", () => {
-             const params = new URLSearchParams(window.location.search);
-             const code = params.get("code");
-             if (code) {
-                   document.getElementById("codeInput").value = code;
-                   searchCompany();
-         }
-        });
+
 
     </script>
 </body>
 
 </html>
+
 
 
 
