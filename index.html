@@ -1,205 +1,24 @@
 <!DOCTYPE html>
-<html lang="ja">
-
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>主要取引先逆引きツール</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-
-        #matches {
-            margin-top: 10px;
-        }
-
-        .match-item {
-            cursor: pointer;
-            padding: 5px;
-            border: 1px solid #ccc;
-            margin: 2px 0;
-            border-radius: 5px;
-        }
-
-        .match-item:hover {
-            background-color: #f0f0f0;
-        }
-
-        table {
-            border-collapse: collapse;
-            margin-top: 10px;
-            width: 100%;
-        }
-
-        th,
-        td {
-            border: 1px solid #ccc;
-            padding: 6px 10px;
-            text-align: left;
-        }
-
-        th {
-            background-color: #eee;
-        }
-
-        a {
-            color: inherit;
-            /* 周りのテキストと同じ色にする */
-            text-decoration: none;
-            /* 下線を消す */
-        }
-
-        a:hover {
-            text-decoration: underline;
-            /* ホバー時だけ下線を表示する（控えめに） */
-        }
-    </style>
+    <link rel="stylesheet" href="./css/style.css">
 </head>
-
 <body>
-    <h1>主要取引先 逆引きツール</h1>
-    <label for="codeInput">企業名か証券コードを入力(企業名の場合、上場企業以外でも可):</label>
-    <input type="text" id="codeInput" placeholder="例:7203,トヨタ自動車">
-    <button onclick="searchCompany()">検索</button>
+    <h1>主要取引先逆引き確認</h1>
+
+    <form method="GET">
+        <label for="code_input">企業名か証券コードを入力(企業名の場合、上場企業以外でも可):</label>
+        <input type="text" id="code_input" name="code" placeholder="例:7203,トヨタ自動車">
+        <button type="submit">検索</button>
+    </form>
 
     <div id="matches"></div>
     <div id="result"></div>
 
-    <script>
-        let companyData = [];
-
-fetch("data.json")
-    .then(response => response.json())
-    .then(data => {
-        companyData = data;
-
-        // JSONが読み込まれた後にURLパラメータをチェック
-        const params = new URLSearchParams(window.location.search);
-        const code = params.get("code");
-        if (code) {
-            document.getElementById("codeInput").value = code;
-            searchCompany();
-        }
-    })
-    .catch(error => {
-        console.error("データ読み込みエラー:", error);
-    });
-
-        // 部分一致検索
-        function searchCompany() {
-            const input = document.getElementById("codeInput").value.trim();
-            document.getElementById("codeInput").value = "";
-            const matchesDiv = document.getElementById("matches");
-            const resultDiv = document.getElementById("result");
-            matchesDiv.innerHTML = "";
-            resultDiv.innerHTML = "";
-
-            if (!input) {
-                matchesDiv.innerHTML = "<p>企業名または証券コードを入力してください。</p>";
-                return;
-            }
-
-            let matches = new Set();
-
-            const companyByCode = companyData.find(c => c["証券コード"] === input);
-            if (companyByCode) {
-                // 証券コードで見つかった場合 → 企業名を検索対象にする
-                inputName = companyByCode["企業名"];
-            } else {
-                // コードで見つからなければ → 入力そのままを企業名とみなす
-                inputName = input;
-            }
-
-            companyData.forEach(company => {
-                if (company["主要取引先"]) {
-                    company["主要取引先"].forEach(partner => {
-                        if (partner["取引先名"].includes(inputName)) {
-                            matches.add(partner["取引先名"]);
-                        }
-                    });
-                }
-            });
-
-            if (matches.size === 0) {
-                matchesDiv.innerHTML = `<p>企業名「${inputName}」への主要取引先は見つかりませんでした。</p>`;
-                return;
-            }
-
-            matchesDiv.innerHTML = `<p>「${inputName}」に一致した取引先を選んでください:</p>`;
-            matches.forEach(name => {
-                const div = document.createElement("div");
-                div.textContent = name;
-                div.classList.add("match-item");
-                div.onclick = () => showCompanies(name);
-                matchesDiv.appendChild(div);
-            });
-        }
-
-        // 選択した取引先を持つ企業を表示（割合付き & 降順ソート）
-        function showCompanies(partnerName) {
-            const resultDiv = document.getElementById("result");
-            resultDiv.innerHTML = `<h3>「${partnerName}」が主要取引先の企業(割合でソート):</h3>`;
-
-            let results = [];
-
-            companyData.forEach(company => {
-                if (company["主要取引先"]) {
-                    company["主要取引先"].forEach(partner => {
-                        if (partner["取引先名"] === partnerName) {
-                            results.push({
-                                code: company["証券コード"],
-                                name: company["企業名"],
-                                ratio: parseFloat(partner["割合"])
-                            });
-                        }
-                    });
-                }
-            });
-
-            // 割合の降順にソート
-            results.sort((a, b) => b.ratio - a.ratio);
-
-            if (results.length === 0) {
-                resultDiv.innerHTML += "<p>該当する企業はありません。</p>";
-                return;
-            }
-
-            let list = "<ul>";
-
-            results.forEach(item => {
-                const url = `https://ueno2025.github.io/visibility_of_business_partners/?code=${item.code}`;
-                list += `
-            <li>
-                <a href="${url}" target="_blank">
-                    ${item.code}: ${item.name}
-                 - ${item.ratio}%
-                 </a>
-            </li>`;
-            });
-
-            list += "</ul>";
-            resultDiv.innerHTML += list;
-            resultDiv.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
-
-        // Enterキーでも検索できるようにする
-        document.getElementById("codeInput").addEventListener("keydown", function (event) {
-            if (event.key === "Enter") {
-                searchCompany();
-            }
-        });
-
-
-
-    </script>
+    <script type="module" src="./js/main.js"></script>
+    
 </body>
-
 </html>
-
-
-
-
-
-
