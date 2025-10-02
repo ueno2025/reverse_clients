@@ -46,6 +46,9 @@ function get_company_list(companies, company_name) {
         });
     });
 
+    candidates.forEach((arr, key) => {
+        arr.sort((a, b) => b["割合"] - a["割合"]);
+    });
     return candidates;
 
 }
